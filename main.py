@@ -4,6 +4,20 @@ import aiofiles
 import aiohttp
 import aiosqlite
 from aiohttp import web
+import sqlite3
+
+conn = sqlite3.connect('database.db')
+cursor = conn.cursor()
+
+
+cursor.execute("SELECT COUNT(*) FROM baza_projekt")
+count1 = cursor.fetchone()[0]
+
+
+if count1 == 0:
+    print("The database is empty.")
+else:
+    print("The database is not empty.")
 
 routes = web.RouteTableDef()
 
@@ -19,7 +33,7 @@ async def json_data(request):
                 for item in whole_data:
                     db_item = {}
                     db_item["username"] = item["repo_name"].rsplit("/", 1)[0]
-                    db_item["ghlink"] = "https://github.com/" + item["repo_name"]
+                    db_item["ghlink"] = "https://github.com/" + item["repo_name"] + ".com"
                     db_item["filename"] = item["path"].rsplit("/", 1)[1]
                     database.append(db_item)
                     await db.execute(
@@ -40,27 +54,4 @@ app = web.Application()
 app.router.add_routes(routes)
 web.run_app(app, port=8081)
 
-"""""
-conn = sqlite3.connect('database.db')
-cursor = conn.cursor()
 
-
-cursor.execute("SELECT COUNT(*) FROM baza_projekt")
-count1 = cursor.fetchone()[0]
-
-
-if count1 == 0:
-    print("The database is empty.")
-else:
-    print("The database is not empty.")
-
-
-query = 'SELECT id,username,ghlink,filename FROM baza_projekt'
-
-results = cursor.execute(query)
-
-for row in results:
-    print(row)
-
-conn.close()
-"""
