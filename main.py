@@ -9,10 +9,8 @@ import sqlite3
 conn = sqlite3.connect('database.db')
 cursor = conn.cursor()
 
-
 cursor.execute("SELECT COUNT(*) FROM baza_projekt")
 count1 = cursor.fetchone()[0]
-
 
 if count1 == 0:
     print("The database is empty.")
@@ -26,13 +24,13 @@ routes = web.RouteTableDef()
 async def json_data(request):
     try:
         async with aiofiles.open('file-000000000040.json', mode='r') as file_data:
-            read_data = {await file_data.readline() for _ in range(10)}
+            read_data = {await file_data.readline() for _ in range(20)}
             whole_data = [json.loads(line) for line in read_data]
             database = []
             async with aiosqlite.connect("database.db") as db:
                 for item in whole_data:
                     db_item = {}
-                    db_item["username"] = item["repo_name"].rsplit("/", 1)[0]
+                    db_item["username"] =  item["repo_name"].rsplit("/", 1)[0]
                     db_item["ghlink"] = "https://github.com/" + item["repo_name"] + ".com"
                     db_item["filename"] = item["path"].rsplit("/", 1)[1]
                     database.append(db_item)
@@ -41,17 +39,14 @@ async def json_data(request):
                         (
                             db_item["username"], db_item["ghlink"], db_item["filename"]))
                     await db.commit()
-                async with db.execute("SELECT * FROM baza_projekt") as cur:
-                    result = len(await cur.fetchall())
-            message = {"status": "ok", "data": {"numberOfRowsInTable": result}}
-            return web.json_response(message, status=200)
-        return web.json_response(database, status=200)
+                async with db.execute("SELECT * FROM baza_projekt LIMIT 10") as cur:
+                    result = await cur.fetchall()
+            return web.json_response({"data": result}, status=200)
 
     except Exception as e:
         return web.json_response({"Error": str(e)}, status=500)
 
+
 app = web.Application()
 app.router.add_routes(routes)
 web.run_app(app, port=8081)
-
-
