@@ -27,7 +27,8 @@ async def json_data(request):
             read_data = {await file_data.readline() for _ in range(20)}
             whole_data = [json.loads(line) for line in read_data]
             database = []
-            async with aiosqlite.connect("database.db") as db:
+            async with aiohttp.ClientSession() as session:
+             async with aiosqlite.connect("database.db") as db:
                 for item in whole_data:
                     db_item = {}
                     db_item["username"] =  item["repo_name"].rsplit("/", 1)[0]
@@ -41,7 +42,10 @@ async def json_data(request):
                     await db.commit()
                 async with db.execute("SELECT * FROM baza_projekt LIMIT 10") as cur:
                     result = await cur.fetchall()
-            return web.json_response({"data": result}, status=200)
+                    database.append(asyncio.create_task(session.post("http://127.0.0.1:8082/", json=result)))
+                    final_results = await asyncio.gather(database)
+                    final_results = [await x.json() for x in final_results]
+            return web.json_response({"data": final_results}, status=200)
 
     except Exception as e:
         return web.json_response({"Error": str(e)}, status=500)
