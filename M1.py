@@ -12,7 +12,7 @@ async def filter_data(request):
         print(json_data)
         dictionary = {}
         data = json_data["data"]
-        print("data", data)
+        print(data)
         dictionary["username"] = data["username"]
         result = {"data": dictionary}
         async with aiohttp.ClientSession() as session:

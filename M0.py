@@ -5,6 +5,7 @@ import aiohttp
 import aiosqlite
 from aiohttp import web
 import sqlite3
+import requests
 
 conn = sqlite3.connect('database.db')
 cursor = conn.cursor()
@@ -26,6 +27,7 @@ async def json_data(request):
             read_data = {await file_data.readline() for _ in range(20)}
             whole_data = [json.loads(line) for line in read_data]
             database = []
+            final_results = []
             async with aiohttp.ClientSession() as session:
              async with aiosqlite.connect("database.db") as db:
                 for item in whole_data:
@@ -43,9 +45,11 @@ async def json_data(request):
                     result = await cur.fetchall()
                     for row in result:
                         database.append(dict(zip(columns, row)))
-                    print(database)
+                        url = 'http://127.0.0.1:8082'
+                        data = dict(zip(columns, row))
+                        response = requests.post(url, json=data)
                     await db.commit()
-            return web.json_response({"data":database}, status=200)
+            return web.json_response({"data": database}, status=200)
 
 
 app = web.Application()
