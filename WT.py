@@ -17,10 +17,10 @@ async def filter_data(request):
 
     result = wt
     print(result)
-    """""
-    url = 'http://127.0.0.1:8084'
+
+    url = 'http://127.0.0.1:8084/gatherData'
     requests.post(url, json=result)
-    """
+
     return web.json_response(result, status=200)
 
 
