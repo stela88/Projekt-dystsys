@@ -22,7 +22,6 @@ routes = web.RouteTableDef()
 
 @routes.get("/JsonData")
 async def json_data(request):
-    try:
         async with aiofiles.open('file-000000000040.json', mode='r') as file_data:
             read_data = {await file_data.readline() for _ in range(20)}
             whole_data = [json.loads(line) for line in read_data]
@@ -39,16 +38,14 @@ async def json_data(request):
                         "INSERT INTO baza_projekt (username, ghlink, filename) VALUES (?,?,?)",
                         (
                             db_item["username"], db_item["ghlink"], db_item["filename"]))
-                    await db.commit()
                 async with db.execute("SELECT * FROM baza_projekt LIMIT 10") as cur:
+                    columns = [column[0] for column in cur.description]
                     result = await cur.fetchall()
-                    database.append(asyncio.create_task(session.post("http://127.0.0.1:8082/", json=result)))
-                    final_results = await asyncio.gather(database)
-                    final_results = [await x.json() for x in final_results]
-            return web.json_response({"data": final_results}, status=200)
-
-    except Exception as e:
-        return web.json_response({"Error": str(e)}, status=500)
+                    for row in result:
+                        database.append(dict(zip(columns, row)))
+                    print(database)
+                    await db.commit()
+            return web.json_response({"data":database}, status=200)
 
 
 app = web.Application()
