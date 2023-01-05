@@ -23,33 +23,34 @@ routes = web.RouteTableDef()
 
 @routes.get("/JsonData")
 async def json_data(request):
-        async with aiofiles.open('file-000000000040.json', mode='r') as file_data:
-            read_data = {await file_data.readline() for _ in range(20)}
-            whole_data = [json.loads(line) for line in read_data]
-            database = []
-            final_results = []
-            async with aiohttp.ClientSession() as session:
-             async with aiosqlite.connect("database.db") as db:
-                for item in whole_data:
-                    db_item = {}
-                    db_item["username"] =  item["repo_name"].rsplit("/", 1)[0]
-                    db_item["ghlink"] = "https://github.com/" + item["repo_name"] + ".com"
-                    db_item["filename"] = item["path"].rsplit("/", 1)[1]
-                    database.append(db_item)
-                    await db.execute(
-                        "INSERT INTO baza_projekt (username, ghlink, filename) VALUES (?,?,?)",
-                        (
-                            db_item["username"], db_item["ghlink"], db_item["filename"]))
-                async with db.execute("SELECT * FROM baza_projekt LIMIT 10") as cur:
-                    columns = [column[0] for column in cur.description]
-                    result = await cur.fetchall()
-                    for row in result:
-                        database.append(dict(zip(columns, row)))
-                        url = 'http://127.0.0.1:8082'
-                        data = dict(zip(columns, row))
-                        response = requests.post(url, json=data)
-                    await db.commit()
-            return web.json_response({"data": database}, status=200)
+    async with aiofiles.open('file-000000000040.json', mode='r') as file_data:
+        read_data = {await file_data.readline() for _ in range(20)}
+        whole_data = [json.loads(line) for line in read_data]
+        database = []
+        final_result = []
+        async with aiosqlite.connect("database.db") as db:
+            for item in whole_data:
+                db_item = {}
+                db_item["username"] = item["repo_name"].rsplit("/", 1)[0]
+                db_item["ghlink"] = "https://github.com/" + item["repo_name"] + ".com"
+                db_item["filename"] = item["path"].rsplit("/", 1)[1]
+                database.append(db_item)
+                await db.execute(
+                    "INSERT INTO baza_projekt (username, ghlink, filename) VALUES (?,?,?)",
+                    (
+                        db_item["username"], db_item["ghlink"], db_item["filename"]))
+            async with db.execute("SELECT * FROM baza_projekt LIMIT 10") as cur:
+                columns = [column[0] for column in cur.description]
+                result = await cur.fetchall()
+                for row in result:
+                    final_result.append(dict(zip(columns, row)))
+                data = final_result
+
+                url = 'http://127.0.0.1:8080'
+                requests.post(url, json=data)
+
+                await db.commit()
+        return web.json_response(data, status=200)
 
 
 app = web.Application()
