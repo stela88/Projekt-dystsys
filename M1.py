@@ -12,8 +12,10 @@ async def filter_data(request):
         dictionaries.append(dictionary)
     result = dictionaries
     print("result", result)
-    url = 'http://127.0.0.1:8083/'
-    requests.post(url, json=result)
+    url1 = 'http://127.0.0.1:8083/'
+    url2 = 'http://127.0.0.1:8084/'
+    requests.post(url1, json=result)
+    requests.post(url2, json=result)
     return web.json_response(result, status=200)
 
 
