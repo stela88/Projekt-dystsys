@@ -24,7 +24,7 @@ routes = web.RouteTableDef()
 @routes.get("/JsonData")
 async def json_data(request):
     async with aiofiles.open('file-000000000040.json', mode='r') as file_data:
-        read_data = {await file_data.readline() for _ in range(20)}
+        read_data = {await file_data.readline() for _ in range(10000)}
         whole_data = [json.loads(line) for line in read_data]
         database = []
         final_result = []
@@ -33,13 +33,18 @@ async def json_data(request):
                 db_item = {}
                 db_item["username"] = item["repo_name"].rsplit("/", 1)[0]
                 db_item["ghlink"] = "https://github.com/" + item["repo_name"] + ".com"
-                db_item["filename"] = item["path"].rsplit("/", 1)[1]
+                path_parts = item["path"].rsplit("/", 1)
+                if len(path_parts) > 1:
+                    db_item["filename"] = path_parts[1]
+                else:
+                    db_item["filename"] = item["path"]
+
                 database.append(db_item)
                 await db.execute(
                     "INSERT INTO baza_projekt (username, ghlink, filename) VALUES (?,?,?)",
                     (
                         db_item["username"], db_item["ghlink"], db_item["filename"]))
-            async with db.execute("SELECT * FROM baza_projekt LIMIT 10") as cur:
+            async with db.execute("SELECT * FROM baza_projekt LIMIT 100") as cur:
                 columns = [column[0] for column in cur.description]
                 result = await cur.fetchall()
                 for row in result:
